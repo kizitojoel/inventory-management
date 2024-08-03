@@ -19,11 +19,13 @@ import {
   Stack,
   TextField,
   Button,
+  Autocomplete,
 } from '@mui/material';
 
 export default function Home() {
   const [inventory, setInventory] = useState([]);
   const [open, setOpen] = useState(false);
+  const [searchResult, setSearchResult] = useState([]);
   const [itemName, setItemName] = useState('');
 
   const updateInventory = async () => {
@@ -51,6 +53,8 @@ export default function Home() {
         await setDoc(docRef, { quantity: quantity - 1 });
       }
     }
+
+    await updateInventory();
   };
 
   const addItem = async (item) => {
@@ -66,6 +70,20 @@ export default function Home() {
 
     await updateInventory();
   };
+
+  // const [search, setSearch] = useState('');
+  // function handleSearchClick() {
+  //   if (search === '') {
+  //     return;
+  //   }
+  //   setSearchResult(
+  //     inventory.filter((item) => {
+  //       if (item.name.toLowerCase.includes(search)) {
+  //         return item;
+  //       }
+  //     })
+  //   );
+  // }
 
   useEffect(() => {
     updateInventory();
@@ -125,6 +143,23 @@ export default function Home() {
       <Button variant='contained' onClick={() => handleOpen()}>
         Add New Item
       </Button>
+      <div style={{ width: 300 }}>
+        <Autocomplete
+          width='300px'
+          id='free-solo-demo'
+          freeSolo
+          options={inventory.map((item) => item.name)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label='Search'
+              margin='normal'
+              variant='outlined'
+            />
+          )}
+        />
+      </div>
+
       <Box border='1px solid #333'>
         <Box
           width='800px'
