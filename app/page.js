@@ -56,6 +56,93 @@ export default function Home() {
   const [searchResult, setSearchResult] = useState(inventory);
   const [itemName, setItemName] = useState('');
 
+  // Adding states to keep track fo the item modals
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  // Function to handle opening of item modal
+  const handleOpenModal = (item) => {
+    setSelectedItem(item);
+    setItemModalOpen(true);
+  };
+
+  // Function to handle closing the modal
+  const handleCloseModal = () => {
+    setItemModalOpen(false);
+    setSelectedItem(null);
+  };
+
+  const ItemModal = ({ item, isOpen, onClose, onSave }) => {
+    const [editedItem, setEditedItem] = useState(item || {});
+
+    useEffect(() => {
+      setEditedItem(item || {});
+    }, [item]);
+
+    const handleChange = (e) => {
+      if (e.target) {
+        const { name, value } = e.target;
+        if (name) {
+          setEditedItem((prev) => ({ ...prev, [name]: value }));
+        } else {
+          console.error("The target element does not have a 'name' attribute.");
+        }
+      } else {
+        console.error('Event target is null.');
+      }
+    };
+
+    const handleSave = () => {
+      onSave(editedItem);
+      onClose();
+    };
+
+    if (!isOpen) {
+      return null;
+    }
+
+    return (
+      <Modal open={isOpen} onClose={onClose}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 400,
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography variant='h6' component='h2'>
+            Edit Item
+          </Typography>
+          <TextField
+            label='Name'
+            name='name'
+            value={editedItem.name}
+            onChange={handleChange}
+            fullWidth
+            margin='normal'
+          />
+          <TextField
+            label='Quantity'
+            name='quantity'
+            value={editedItem.quantity}
+            onChange={handleChange}
+            fullWidth
+            margin='normal'
+          />
+          {/* Add more fields as needed */}
+          <Button onClick={handleSave} variant='contained' sx={{ mt: 2 }}>
+            Save
+          </Button>
+        </Box>
+      </Modal>
+    );
+  };
+
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, 'inventory'));
     const docs = await getDocs(snapshot);
@@ -221,22 +308,6 @@ export default function Home() {
             Add New Item
           </Button>
         </Box>
-        {/* <div style={{ width: 300 }}>
-        <Autocomplete
-          width='300px'
-          id='free-solo-demo'
-          freeSolo
-          options={inventory.map((item) => item.name)}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label='Search'
-              margin='normal'
-              variant='outlined'
-            />
-          )}
-        />
-      </div> */}
 
         <Box
           id
@@ -249,9 +320,9 @@ export default function Home() {
             flexWrap: 'wrap',
           }}
         >
-          {searchResult.map(({ name, quantity }) => (
+          {searchResult.map((item) => (
             <Paper
-              key={name}
+              key={item.name}
               elevation={8}
               sx={{
                 width: { xs: '100%', md: 'auto' },
@@ -264,7 +335,7 @@ export default function Home() {
               }}
             >
               <Typography variant='h3' color='#333' textAlign='center'>
-                {name.charAt(0).toUpperCase() + name.slice(1)}
+                {item.name.charAt(0).toUpperCase() + item.name.slice(1)}
               </Typography>
               <Box
                 sx={{
@@ -280,7 +351,26 @@ export default function Home() {
                   variant='outlined'
                   size='small'
                   onClick={() => {
-                    addItem(name);
+                    removeItem(item.name);
+                  }}
+                  sx={{
+                    aspectRatio: '1/1',
+                    borderRadius: '50%',
+                    width: '50px',
+                  }}
+                >
+                  -
+                </Button>
+
+                <Typography variant='h3' color='#333' textAlign='center'>
+                  {item.quantity}
+                </Typography>
+
+                <Button
+                  variant='outlined'
+                  size='small'
+                  onClick={() => {
+                    addItem(item.name);
                   }}
                   sx={{
                     aspectRatio: '1/1',
@@ -290,32 +380,35 @@ export default function Home() {
                 >
                   +
                 </Button>
-
-                <Typography variant='h3' color='#333' textAlign='center'>
-                  {quantity}
-                </Typography>
-
-                <Button
-                  variant='contained'
-                  onClick={() => {
-                    removeItem(name);
-                  }}
-                >
-                  -
-                </Button>
               </Box>
               <Button
                 variant='contained'
                 onClick={() => {
-                  removeItemAll(name);
+                  removeItemAll(item.name);
                 }}
                 sx={{ width: '100%' }}
               >
                 Remove All
               </Button>
+              <Button
+                variant='outlined'
+                onClick={() => handleOpenModal(item)}
+                sx={{ width: '100%' }}
+              >
+                Expand
+              </Button>
             </Paper>
           ))}
         </Box>
+        <ItemModal
+          item={selectedItem}
+          isOpen={itemModalOpen}
+          onClose={handleCloseModal}
+          onSave={(updatedItem) => {
+            // Handle save logic here, e.g., update the state or make an API call
+            console.log('Updated Item:', updatedItem);
+          }}
+        />
       </Box>
     </ThemeProvider>
   );
